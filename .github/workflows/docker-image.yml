@@ -1,0 +1,46 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Get latest image version
+        id: get-latest-version
+        run: |
+          # 获取最大版本号
+          LATEST_VERSION=$(curl -s "https://registry.hub.docker.com/v2/repositories/code3f3/ai_correct/tags/?page_size=100" | jq -r '.results[].name' | grep -Eo "[0-9]+" | sort -rn | head -n1)
+          LATEST_VERSION=$(( LATEST_VERSION + 1 ))
+          LATEST_VERSION="0.0.$LATEST_VERSION"
+          echo "::set-output name=latest_version::$LATEST_VERSION"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          CURRENT_VERSION=${{ steps.get-latest-version.outputs.latest_version }} 
+          docker build  --tag docker.io/code3f3/ai_correct:${CURRENT_VERSION} .
+          docker push docker.io/code3f3/ai_correct:${CURRENT_VERSION}
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ steps.get-latest-version.outputs.latest_version }} "
+          release_name: "Release-${{ steps.get-latest-version.outputs.latest_version }} "
+          draft: false
+          prerelease: false
