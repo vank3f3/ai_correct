@@ -33,14 +33,3 @@ jobs:
           CURRENT_VERSION=${{ steps.get-latest-version.outputs.latest_version }} 
           docker build  --tag docker.io/code3f3/ai_correct:${CURRENT_VERSION} .
           docker push docker.io/code3f3/ai_correct:${CURRENT_VERSION}
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: "v${{ steps.get-latest-version.outputs.latest_version }} "
-          release_name: "Release-${{ steps.get-latest-version.outputs.latest_version }} "
-          draft: false
-          prerelease: false
