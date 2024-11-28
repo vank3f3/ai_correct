@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"sync"
 	"time"
 
 	"grading-api/services/analyzer"
+	"grading-api/services/logger"
 	"grading-api/services/reviewer"
 	"grading-api/services/teacher"
 	"grading-api/types"
@@ -16,7 +18,18 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-var gradingHistory []types.GradingResponse
+var (
+	gradingHistory []types.GradingResponse
+	loggerService  *logger.Logger
+)
+
+func init() {
+	var err error
+	loggerService, err = logger.NewLogger("logs")
+	if err != nil {
+		log.Fatal("Failed to initialize logger:", err)
+	}
+}
 
 // 处理批改请求
 func handleGrading(_ *openai.Client) gin.HandlerFunc {
@@ -93,6 +106,11 @@ func handleGrading(_ *openai.Client) gin.HandlerFunc {
 			AnswerAnalysis:   answerAnalysis,
 			TeacherResults:   teacherResults,
 			FinalResult:      finalResult,
+		}
+
+		// 记录请求和响应
+		if err := loggerService.Log(req, response); err != nil {
+			log.Printf("记录日志失败: %v", err)
 		}
 
 		gradingHistory = append(gradingHistory, response)

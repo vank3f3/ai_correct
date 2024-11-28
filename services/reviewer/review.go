@@ -62,8 +62,6 @@ func (r *Reviewer) Review(ctx context.Context, req types.GradingRequest, questio
 		return types.FinalResult{}, fmt.Errorf("最终审核请求失败: %v", err)
 	}
 
-	log.Printf("OpenAI Response: %s", resp.Choices[0].Message.Content)
-
 	// 清理响应内容中的markdown格式
 	content := cleanMarkdownJSON(resp.Choices[0].Message.Content)
 
